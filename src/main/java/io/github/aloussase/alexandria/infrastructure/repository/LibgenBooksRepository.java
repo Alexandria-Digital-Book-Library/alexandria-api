@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.*;
 
 @Repository
 public class LibgenBooksRepository implements BookRepository {
@@ -25,6 +26,9 @@ public class LibgenBooksRepository implements BookRepository {
 
     private final static Set<String> acceptableBookFormats = Set.of("pdf", "epub", "mobi", "azw3");
 
+    private final ScheduledExecutorService executor =
+            Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
+
     @Override
     public List<Book> searchByTitle(String title) {
         final var searchUrl = createSearchUrl(title);
@@ -32,15 +36,25 @@ public class LibgenBooksRepository implements BookRepository {
             final var doc = Jsoup.connect(searchUrl).get();
             final var rows = doc.select("tr:not(:first-child)");
             final var books = new ArrayList<Book>();
-            // TODO: Paralellize this loop.
+            final var futures = new ArrayList<Future<Book>>();
+
             // TODO: Cache search results.
+
             for (var row : rows) {
+                final var future = executor.schedule(
+                        () -> parseRow(row),
+                        1000,
+                        TimeUnit.MILLISECONDS);
+                futures.add(future);
+            }
+
+            for (var future : futures) {
                 try {
-                    final var book = parseRow(row);
-                    books.add(book);
-                } catch (BadRowException ignored) {
+                    books.add(future.get());
+                } catch (InterruptedException | ExecutionException ignored) {
                 }
             }
+
             return books;
         } catch (IOException e) {
             return List.of();
@@ -83,6 +97,8 @@ public class LibgenBooksRepository implements BookRepository {
                 .map(el -> el.attr("href"))
                 .findFirst()
                 .orElseThrow(BadRowException::new);
+
+        // TODO: Fetch the mirrors page in parallel with a CompletableFuture
 
         final var mirrorsDoc = Jsoup.connect(mirrorsPageUrl).get();
 
