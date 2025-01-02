@@ -5,7 +5,6 @@ import io.github.aloussase.alexandria.domain.repository.BookRepository;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
-import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -36,8 +35,6 @@ public class LibgenBooksRepository implements BookRepository {
             final var rows = doc.select("tr:not(:first-child)");
             final var books = new ArrayList<Book>();
             final var futures = new ArrayList<Future<Book>>();
-
-            // TODO: Cache search results.
 
             for (var row : rows) {
                 final var future = executor.schedule(
