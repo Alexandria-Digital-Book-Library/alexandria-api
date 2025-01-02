@@ -28,6 +28,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation "org.jsoup:jsoup:1.15.3"
     implementation 'com.maxmind.geoip2:geoip2:2.15.0'
+    implementation "io.github.resilience4j:resilience4j-spring-boot3:2.2.0"
+    implementation "org.springframework.boot:spring-boot-starter-actuator"
+    implementation "org.springframework.boot:spring-boot-starter-aop"
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql'
     annotationProcessor 'org.projectlombok:lombok'
