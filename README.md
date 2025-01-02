@@ -1,1 +1,1 @@
-API for download digital books from a number of different sources and formats.
+API for downloading digital books from a number of different sources and formats.
