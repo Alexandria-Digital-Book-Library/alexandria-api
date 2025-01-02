@@ -10,6 +10,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -37,6 +38,7 @@ class AlexandriaApplicationTests {
         return "http://localhost:" + port + "/api/books?title=" + title;
     }
 
+    @DirtiesContext
     @Test
     void testSearchingForBookProvidingEmptyTitleReturnsBadRequest() {
         final var uri = createSearchUrlFor("");
@@ -46,6 +48,7 @@ class AlexandriaApplicationTests {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatusCode.valueOf(400));
     }
 
+    @DirtiesContext
     @Test
     void testSearchingBookWithValidTitleReturnsListOfBooks() {
         final var uri = createSearchUrlFor("lions");
@@ -56,6 +59,7 @@ class AlexandriaApplicationTests {
         assertThat(response.getBody()).isNotEmpty();
     }
 
+    @DirtiesContext
     @Test
     void testSearchingForBookTwiceMakesSecondRequestFaster() {
         final var uri = createSearchUrlFor("lions");
