@@ -1,60 +1,76 @@
 package io.github.aloussase.alexandria;
 
-import io.github.aloussase.alexandria.application.controller.BookController;
+import io.github.aloussase.alexandria.application.di.BooksModule;
 import io.github.aloussase.alexandria.domain.models.Book;
-import io.github.aloussase.alexandria.domain.repository.BookRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.*;
 
-import io.github.aloussase.alexandria.domain.services.BookService;
-import org.springframework.http.ResponseEntity;
 
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = {BooksModule.class})
+@SpringBootTest(classes = AlexandriaApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class AlexandriaApplicationTests {
 
-    @Test
-    void testSearchingForABookByItsTitleReturnsBooksContainingThatTitle() {
-        // Arrange
-        final var bookRepository = mock(BookRepository.class);
-        when(bookRepository.searchByTitle("lions")).thenReturn(
-                List.of(
-                        new Book("The lions kingdom"),
-                        new Book("A tale of two lions")
-                )
-        );
+    @LocalServerPort
+    private int port;
 
-        final var bookService = new BookService(bookRepository);
-        final var controller = new BookController(bookService);
+    private final TestRestTemplate template = new TestRestTemplate();
 
-        // Act
-        final var result = controller.searchBooks("lions");
+    private final ParameterizedTypeReference<List<Book>> booksTypeReference =
+            new ParameterizedTypeReference<>() {
+            };
 
-        // Assert
-        assertThat(result.getStatusCode().value()).isEqualTo(200);
-        assertThat(result.getBody()).hasSize(2);
 
-        verify(bookRepository).searchByTitle("lions");
+    private String createSearchUrlFor(String title) {
+        return "http://localhost:" + port + "/api/books?title=" + title;
     }
 
     @Test
-    void testSearchingABookByTitleProvidingAnEmptyTitleThrowsAnException() {
-        // Arrange
-        final var bookRepository = mock(BookRepository.class);
-        final var bookService = new BookService(bookRepository);
-        final var controller = new BookController(bookService);
+    void testSearchingForBookProvidingEmptyTitleReturnsBadRequest() {
+        final var uri = createSearchUrlFor("");
 
-        // Act
-        final Supplier<ResponseEntity<List<Book>>> result = () -> controller.searchBooks("");
+        final var response = template.exchange(uri, HttpMethod.GET, null, Object.class);
 
-        // Assert
-        assertThatThrownBy(result::get)
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("title");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatusCode.valueOf(400));
+    }
+
+    @Test
+    void testSearchingBookWithValidTitleReturnsListOfBooks() {
+        final var uri = createSearchUrlFor("lions");
+
+        final var response = template.exchange(uri, HttpMethod.GET, null, booksTypeReference);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatusCode.valueOf(200));
+        assertThat(response.getBody()).isNotEmpty();
+    }
+
+    @Test
+    void testSearchingForBookTwiceMakesSecondRequestFaster() {
+        final var uri = createSearchUrlFor("lions");
+
+        final var start0 = System.currentTimeMillis();
+        template.exchange(uri, HttpMethod.GET, null, booksTypeReference);
+        final var end0 = System.currentTimeMillis();
+        final var elapsed0 = end0 - start0;
+
+        final var start1 = System.currentTimeMillis();
+        template.exchange(uri, HttpMethod.GET, null, booksTypeReference);
+        final var end1 = System.currentTimeMillis();
+        final var elapsed1 = end1 - start1;
+
+        assertThat(elapsed1).isLessThan(elapsed0);
     }
 
 }
