@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
 
-@Repository
 public class LibgenBooksRepository implements BookRepository {
 
     private static class BadRowException extends Exception {
