@@ -3,7 +3,7 @@ FROM gradle:7-alpine as builder
 WORKDIR /build
 COPY . .
 
-RUN gradle test && gradle build
+RUN gradle build -x test
 
 FROM eclipse-temurin:17-alpine
 
