@@ -2,6 +2,7 @@ package io.github.aloussase.alexandria.infrastructure.repository;
 
 import io.github.aloussase.alexandria.domain.models.Book;
 import io.github.aloussase.alexandria.domain.repository.BookRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
@@ -13,12 +14,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
+import java.util.regex.Pattern;
 
+@Slf4j
 public class LibgenBooksRepository implements BookRepository {
 
     private static class BadRowException extends Exception {
         BadRowException() {
             super("Failed to parse book from row");
+        }
+
+        BadRowException(String message) {
+            super(message);
         }
     }
 
@@ -47,12 +54,18 @@ public class LibgenBooksRepository implements BookRepository {
             for (var future : futures) {
                 try {
                     books.add(future.get());
-                } catch (InterruptedException | ExecutionException ignored) {
+                } catch (InterruptedException | ExecutionException ex) {
+                    if (ex.getCause() instanceof BadRowException badRowException) {
+                        log.warn("Encountered bad row: {}", badRowException.getMessage());
+                    } else {
+                        log.error("Failed to parse book from row", ex);
+                    }
                 }
             }
 
             return books;
-        } catch (IOException e) {
+        } catch (IOException ex) {
+            log.error("Failed to get books from remote source", ex);
             return List.of();
         }
     }
@@ -88,36 +101,36 @@ public class LibgenBooksRepository implements BookRepository {
                 .orElseThrow(BadRowException::new);
 
         final var mirrorsPageUrl = row
-                .select("td:nth-child(10) > a[href]")
+                .select("td:nth-child(11) > a[href]")
                 .stream()
                 .map(el -> el.attr("href"))
                 .findFirst()
-                .orElseThrow(BadRowException::new);
+                .orElseThrow(() -> new BadRowException("Failed to parse mirrors page url"));
 
-        // TODO: Fetch the mirrors page in parallel with a CompletableFuture
-
+        final var assetsRoot = "https://libgen.li";
         final var mirrorsDoc = Jsoup.connect(mirrorsPageUrl).get();
 
         final var downloadUrl = mirrorsDoc
-                .select("h2 > a[href]")
+                .select("a[href]")
                 .stream()
-                .map(el -> el.attr("href").replace("https", "http"))
+                .map(el -> assetsRoot + el.attr("href"))
                 .findFirst()
-                .orElseThrow(BadRowException::new);
+                .orElseThrow(() -> new BadRowException("Failed to parse book download url"));
 
-        final var imageUrl = "https://library.lol" + mirrorsDoc
+        final var imageUrl = assetsRoot + mirrorsDoc
                 .select("img[src]")
                 .stream()
+                .skip(1) // logo
                 .map(el -> el.attr("src"))
                 .findFirst()
-                .orElseThrow(BadRowException::new);
+                .orElseThrow(() -> new BadRowException("Failed to parse book image url"));
 
         return new Book(title, authors, extension, downloadUrl, imageUrl, size);
     }
 
     private String createSearchUrl(String title) {
         final var sb = new StringBuilder();
-        sb.append("https://libgen.is/search.php?req=");
+        sb.append("http://libgen.is/search.php?req=");
         sb.append(URLEncoder.encode(title, StandardCharsets.UTF_8));
         sb.append("&res=50");
         sb.append("&column=def");
