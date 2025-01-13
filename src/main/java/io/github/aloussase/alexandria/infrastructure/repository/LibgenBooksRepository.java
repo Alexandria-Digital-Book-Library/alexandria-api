@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
-import java.util.regex.Pattern;
 
 @Slf4j
 public class LibgenBooksRepository implements BookRepository {
