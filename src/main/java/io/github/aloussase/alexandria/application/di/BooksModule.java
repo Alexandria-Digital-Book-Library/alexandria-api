@@ -1,10 +1,7 @@
 package io.github.aloussase.alexandria.application.di;
 
 import io.github.aloussase.alexandria.domain.repository.BookRepository;
-import io.github.aloussase.alexandria.infrastructure.repository.AnnasArchiveBooksRepository;
-import io.github.aloussase.alexandria.infrastructure.repository.CachingBookRepository;
-import io.github.aloussase.alexandria.infrastructure.repository.LibgenBooksRepository;
-import io.github.aloussase.alexandria.infrastructure.repository.StatisticsGatheringBookRepository;
+import io.github.aloussase.alexandria.infrastructure.repository.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -17,6 +14,8 @@ public class BooksModule {
         return new StatisticsGatheringBookRepository(
                 jdbcTemplate,
                 new CachingBookRepository(
-                        new AnnasArchiveBooksRepository()));
+                        new CompositeBookRepository()
+                                .with(new AnnasArchiveBooksRepository())
+                                .with(new LibgenBooksRepository())));
     }
 }
