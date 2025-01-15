@@ -102,7 +102,7 @@ public class AnnasArchiveBooksRepository implements BookRepository {
 
         final var size = sizeMatcher.group(1);
 
-        final var book = new Book(bookTitle, Arrays.asList(authors), extension, downloadUrl, imageUrl, size);
+        final var book = new Book(bookTitle, Arrays.asList(authors), extension, downloadUrl, imageUrl, size, true);
 
         return Optional.of(book);
     }

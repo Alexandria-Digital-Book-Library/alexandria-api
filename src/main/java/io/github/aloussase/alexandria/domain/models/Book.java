@@ -16,6 +16,7 @@ public class Book {
     private String downloadUrl;
     private String imageUrl;
     private String size;
+    private boolean shouldOpenBrowser = false;
 
     public Book(String title) {
         this.title = title;

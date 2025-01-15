@@ -104,13 +104,13 @@ public class LibgenBooksRepository implements BookRepository {
                     .findFirst()
                     .orElseThrow(() -> new BadRowException("Failed to parse book image url"));
 
-            final var book = new Book(title, authors, extension, downloadUrl, imageUrl, size);
+            final var book = new Book(title, authors, extension, downloadUrl, imageUrl, size, false);
 
             return Optional.of(book);
         } catch (BadRowException e) {
             return Optional.empty();
         } catch (IOException e) {
-            log.error("Failed to parse book from Anna's Archive: {}", e.getMessage());
+            log.error("Failed to parse book from Libgen: {}", e.getMessage());
             return Optional.empty();
         }
     }
