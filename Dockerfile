@@ -1,11 +1,12 @@
-FROM gradle:7-alpine as builder
+FROM --platform=$BUILDPLATFORM gradle:7 as builder
 
 WORKDIR /build
 COPY . .
 
-RUN gradle build -x test
+ENV GRADLE_OPTS=-Dorg.gradle.daemon=false
+RUN ./gradlew build --no-daemon -x test --continue
 
-FROM eclipse-temurin:17-alpine
+FROM --platform=$BUILDPLATFORM eclipse-temurin:17
 
 WORKDIR /app
 COPY --from=builder /build/build/libs/alexandria-0.0.1-SNAPSHOT.jar alexandria.jar
