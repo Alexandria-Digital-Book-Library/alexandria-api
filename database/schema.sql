@@ -1,6 +1,8 @@
 -- noinspection SqlNoDataSourceInspectionForFile
 
-create table search_statistics
+create schema if not exists alexandria;
+
+create table alexandria.search_statistics
 (
     id         serial primary key,
     title      text      not null,
