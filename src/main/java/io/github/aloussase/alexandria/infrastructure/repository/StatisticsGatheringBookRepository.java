@@ -8,7 +8,6 @@ import io.github.aloussase.alexandria.domain.models.Book;
 import io.github.aloussase.alexandria.domain.repository.BookRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -21,11 +20,11 @@ import java.util.Optional;
 
 @Slf4j
 public class StatisticsGatheringBookRepository implements BookRepository {
-    private final JdbcTemplate template;
+    // private final JdbcTemplate template;
     private final BookRepository inner;
 
-    public StatisticsGatheringBookRepository(JdbcTemplate template, BookRepository inner) {
-        this.template = template;
+    public StatisticsGatheringBookRepository(/* JdbcTemplate template ,*/ BookRepository inner) {
+        // this.template = template;
         this.inner = inner;
     }
 
@@ -40,8 +39,8 @@ public class StatisticsGatheringBookRepository implements BookRepository {
             final var ipAddr = getIpAddr();
             final var city = ipAddr.flatMap(this::getCity);
 
-            template.update(sql, title, ipAddr.map(InetAddress::getHostAddress).orElse(""),
-                    city.orElse(null));
+            // template.update(sql, title, ipAddr.map(InetAddress::getHostAddress).orElse(""),
+            //         city.orElse(null));
         } catch (Exception ex) {
             log.error("Failed to store search statistics", ex);
         }

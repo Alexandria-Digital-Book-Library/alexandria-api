@@ -1,0 +1,12 @@
+[Unit]
+Description=Digital Book Library API
+After=network.target
+
+[Service]
+ExecStart=java -jar -Djava.net.preferIPv4Stack=true -Dserver.port=6900 -jar /home/aloussase/.jars/alexandria.jar
+Type=simple
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target
